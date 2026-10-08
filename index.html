@@ -1,0 +1,235 @@
+<!-- Launch Menu Overlay -->
+<div id="launch-menu" style="display: none;">
+    <div class="launch-menu-container">
+        <div class="launch-menu-header">
+            <h3>Launch Players (500m)</h3>
+            <button onclick="closeLaunchMenu()">✕</button>
+        </div>
+        <div class="launch-menu-body">
+            <div id="launch-players-list"></div>
+        </div>
+        <div class="launch-menu-footer">
+            <button onclick="launchAllPlayers()" class="launch-all-btn">
+                🚀 Launch ALL Nearby Players
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.launch-menu-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    max-height: 500px;
+    background: rgba(20, 20, 30, 0.95);
+    border: 2px solid #ff4444;
+    border-radius: 10px;
+    z-index: 9999;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+}
+
+.launch-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border-radius: 8px 8px 0 0;
+}
+
+.launch-menu-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.launch-menu-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.launch-menu-header button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.launch-menu-body {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.launch-player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.launch-player-item:hover {
+    background: rgba(255, 68, 68, 0.2);
+    border-left-color: #ff4444;
+    transform: translateX(5px);
+}
+
+.launch-player-item .player-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.launch-player-item .player-name {
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.launch-player-item .player-id {
+    color: #888;
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.launch-player-item .player-distance {
+    color: #00ff88;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.launch-player-item .launch-icon {
+    color: #ff4444;
+    font-size: 20px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.launch-player-item:hover .launch-icon {
+    opacity: 1;
+}
+
+.launch-menu-footer {
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.launch-all-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.launch-all-btn:hover {
+    background: linear-gradient(135deg, #ff6666, #ff0000);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+}
+
+.launch-menu-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.launch-menu-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.launch-menu-body::-webkit-scrollbar-thumb {
+    background: #ff4444;
+    border-radius: 4px;
+}
+</style>
+
+<script>
+// دالة عرض قائمة الإطلاق
+function showLaunchMenu(data) {
+    const menu = document.getElementById('launch-menu');
+    const list = document.getElementById('launch-players-list');
+    
+    if (!data.players || data.players.length === 0) {
+        list.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No nearby players found</div>';
+    } else {
+        list.innerHTML = data.players.map((player, index) => `
+            <div class="launch-player-item" onclick="launchPlayer(${index})">
+                <div class="player-info">
+                    <span class="player-name">${player.name}</span>
+                    <span class="player-id">ID: ${player.serverId}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="player-distance">${player.distance}</span>
+                    <span class="launch-icon">🚀</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    menu.style.display = 'block';
+}
+
+// دالة إخفاء قائمة الإطلاق
+function closeLaunchMenu() {
+    document.getElementById('launch-menu').style.display = 'none';
+}
+
+// دالة إطلاق لاعب محدد
+function launchPlayer(index) {
+    // إرسال الأمر للعبة
+    fetch(`https://${GetParentResourceName()}/launchPlayer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: index + 1 })
+    });
+    closeLaunchMenu();
+}
+
+// دالة إطلاق جميع اللاعبين
+function launchAllPlayers() {
+    fetch(`https://${GetParentResourceName()}/launchAll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    closeLaunchMenu();
+}
+
+// الاستماع لرسائل اللعبة
+window.addEventListener('message', (event) => {
+    const data = event.data;
+    
+    if (data.action === 'showLaunchMenu') {
+        if (data.visible) {
+            showLaunchMenu(data);
+        } else {
+            closeLaunchMenu();
+        }
+    } else if (data.action === 'updateLaunchMenu') {
+        if (document.getElementById('launch-menu').style.display !== 'none') {
+            showLaunchMenu(data);
+        }
+    }
+});
+</script>
